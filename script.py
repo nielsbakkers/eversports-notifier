@@ -16,7 +16,7 @@ now = datetime.now()
 
 #check if the notifier is allowed to run
 def allowed_to_run():
-    if 'SEND_MAIL' in os.environ and os.environ['SEND_MAIL'].lower() == 'true' and int(os.environ['ALLOWED_DAYS_START']) <= now.day <= int(os.environ['ALLOWED_DAYS_END']) and int(os.environ['ALLOWED_HOURS_START']) <= now.hour <= int(os.environ['ALLOWED_HOURS_END']):
+    if 'SEND_NOTIFICATION' in os.environ and os.environ['SEND_NOTIFICATION'].lower() == 'true' and int(os.environ['ALLOWED_DAYS_START']) <= now.day <= int(os.environ['ALLOWED_DAYS_END']) and int(os.environ['ALLOWED_HOURS_START']) <= now.hour <= int(os.environ['ALLOWED_HOURS_END']):
         return True
     return False
 
@@ -44,14 +44,12 @@ def check_for_new_schedule(next_month_first_monday):
     else:
         return False
     
-#reset the SEND_MAIL variable at the first day of the month
+#reset the SEND_NOTIFICATION variable at the first day of the month
 if (now.day == 1):
-    os.environ['SEND_MAIL'] = 'true'
-    dotenv.set_key(dotenv_file, 'SEND_MAIL', os.environ['SEND_MAIL'])
+    os.environ['SEND_NOTIFICATION'] = 'true'
+    dotenv.set_key(dotenv_file, 'SEND_NOTIFICATION', os.environ['SEND_NOTIFICATION'])
 
-#function that sends the email notification
-def send_notification():
-    
+def send_smtp_notification():
     msg = MIMEMultipart()
     msg['FROM'] = os.environ['EMAIL_SENDER']
     msg['To'] = os.environ['EMAIL_RECEIVER']
@@ -68,12 +66,44 @@ def send_notification():
 
         server.quit()
 
-        os.environ['SEND_MAIL'] = 'false'
-        dotenv.set_key(dotenv_file, 'SEND_MAIL', os.environ['SEND_MAIL'])
+        os.environ['SEND_NOTIFICATION'] = 'false'
+        dotenv.set_key(dotenv_file, 'SEND_NOTIFICATION', os.environ['SEND_NOTIFICATION'])
         print('Notification sent successfully!')
     except Exception as error:
         print('An error occured while sending the notification:', str(error))
 
+def send_ntfy_notification():
+    if 'NTFY_URL' in os.environ and os.environ['NTFY_URL'] != '':
+        url = os.environ['NTFY_URL']
+    else:
+        print('No ntfy url found in the os.environ')
+        return
+    if 'NTFY_MESSAGE' in os.environ and os.environ['NTFY_MESSAGE'] != '':
+        message = os.environ['NTFY_MESSAGE']
+    else:
+        print('No ntfy message found in the os.environ')
+        return
+    
+    if 'NTFY_TOKEN' in os.environ and os.environ['NTFY_TOKEN'] != '':
+        requests.post(url, data=message, headers={"Authorization": "Bearer " + os.environ['NTFY_TOKEN']})    
+    elif 'NTFY_USER' in os.environ and os.environ['NTFY_USER'] != '' and 'NTFY_PASS' in os.environ and os.environ['NTFY_PASS'] != '':
+        requests.post(url, data=message, auth=(os.environ['NTFY_USER'], os.environ['NTFY_PASS']))
+    else:
+        print('No ntfy token or user/pass combination found in the os.environ')
+        return
+    
+#function that sends the email notification
+def send_notification():
+    notification_type = int(os.environ['NOTIFICATION_TYPE'])
+    if notification_type == 0:
+        send_smtp_notification()
+        send_ntfy_notification()
+    elif notification_type == 1:
+        send_smtp_notification()
+    elif notification_type == 2:
+        send_ntfy_notification()
+
+    
 #main function that executes the other functions
 print(f'{now} - The script has been executed')
 if allowed_to_run():

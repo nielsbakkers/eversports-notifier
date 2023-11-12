@@ -8,7 +8,7 @@ The goal of this project was to receive an email notification whenever a new tra
 
 The end result is a script that regularly checks for new training sessions by utilizing a cron job. To minimize the load on the Eversports API, the API is only accessed on specific days and times.
 
-If new training sessions are found, an email is sent to a specified email address to notify that new training sessions are available online.
+If new training sessions are found, an email is sent to a specified email address or an API request is made using the [ntfy](https://ntfy.sh/) service this will notify that new training sessions are available.
 
 ## Environment variables
 
@@ -17,7 +17,9 @@ To use the script, you need to define several environment variables. Copy the fi
 Next, define the environment variables. Below, we describe what each variable represents.
 
 ```
-SEND_MAIL=Leave this variable as default, the script will use this variable
+SEND_NOTIFICATION=Leave this variable as default, the script will use this variable
+
+NOTIFICATION_TYPE= Use 0 to use both SMTP as NTFY, 1 is only SMTP and 2 is only NTFY
 
 EMAIL_SENDER=The email address of the sender
 EMAIL_RECEIVER=The email address of the receiver
@@ -29,6 +31,12 @@ SMTP_PORT=The SMTP server port
 SMTP_USERNAME=The SMTP username
 SMTP_PASSWORD=The SMTP password
 
+NTFY_MESSAGE=The message that will be sent to the ntfy channel
+NTFY_URL=The URL used for the ntfy channel
+NTFY_TOKEN=The ntfy user token
+NTFY_USER=The ntfy username
+NTFY_PASS=The ntfy password
+
 EVERSPORTS_FACILITY_ID=The Eversports facility id
 
 ALLOWED_DAYS_START=The script is allowed to run starting from the specified day of the month
@@ -37,7 +45,7 @@ ALLOWED_HOURS_START=The script is allowed to run starting from the specified hou
 ALLOWED_HOURS_END=The script is allowed to run until the specified hour of the day
 ```
 
-It is recommended to consult your email provider for the correct SMTP details.
+It is recommended to consult your email provider for the correct SMTP details. For more information about the ntfy setup please use the following [link](https://docs.ntfy.sh/).
 
 The file [cronjob](cronjob) contains the code that is used for the cron job. You can modify it to control how frequently or infrequently the script is executed. Additionally, you can choose whether to use an output log or not.
 
